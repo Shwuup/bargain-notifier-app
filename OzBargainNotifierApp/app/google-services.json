@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "434260505651",
+    "project_id": "bargain-notifier",
+    "storage_bucket": "bargain-notifier.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:434260505651:android:966d96f2c1f2696bbbdf46",
+        "android_client_info": {
+          "package_name": "com.project.bargainNotifier"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "434260505651-e1r77mt5ofapb9a9rucmso0vlcrc0e2a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOyo2b2SWy3BEc41uC2gmN0gtNnbqeHUU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "434260505651-e1r77mt5ofapb9a9rucmso0vlcrc0e2a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

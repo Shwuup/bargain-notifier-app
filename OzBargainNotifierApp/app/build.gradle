@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 
+
 android {
     signingConfigs {
         local {
         }
     }
     compileSdkVersion 30
-    buildToolsVersion "29.0.3"
     buildFeatures {
         dataBinding true
     }
@@ -18,18 +18,15 @@ android {
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            buildConfigField "String", 'BASE_URL', "\"http://10.0.2.2:3000/\""
+        }
         dev {
             initWith debug
             buildConfigField "String", 'BASE_URL', "\"https://6e0n0n3n06.execute-api.ap-southeast-2.amazonaws.com/dev/\""
-        }
-        local {
-            initWith debug
-            buildConfigField "String", 'BASE_URL', "\"http://10.0.2.2:3000/\""
         }
         release {
             buildConfigField "String", 'BASE_URL', "\"https://a0553pgy0e.execute-api.ap-southeast-2.amazonaws.com/prod/\""
@@ -38,14 +35,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
 dependencies {
-    def work_version = "2.5.0"
+    def work_version = "2.6.0-beta01"
+    testImplementation 'org.mockito:mockito-inline:3.11.0'
+    testImplementation 'net.lachlanmckee:timber-junit-rule:1.0.1'
     implementation "androidx.work:work-runtime:$work_version"
+    implementation "androidx.work:work-rxjava3:$work_version"
     androidTestImplementation "androidx.work:work-testing:$work_version"
     testImplementation 'org.json:json:20190722'
     implementation "androidx.cardview:cardview:1.0.0"
@@ -61,7 +61,8 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:2.0.4"
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:3.11.0'
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.9.1")
+    androidTestImplementation "com.squareup.okhttp3:mockwebserver:4.9.1"
+    testImplementation "com.squareup.okhttp3:mockwebserver:4.9.1"
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.0'
