@@ -14,19 +14,18 @@ import retrofit2.Response;
 import timber.log.Timber;
 
 
-public class TokenApiSyncWorker extends RxWorker {
+public class CreateTokenApiWorker extends RxWorker {
     private static final String TOKEN = "Token";
     private final TokenApiManager tokenManager;
 
 
-    TokenApiSyncWorker(
+    public CreateTokenApiWorker(
             @NonNull Context context,
             @NonNull WorkerParameters params,
             TokenApiManager tokenManager) {
         super(context, params);
         this.tokenManager = tokenManager;
     }
-
 
     @NonNull
     @NotNull

@@ -8,8 +8,8 @@ import androidx.work.DelegatingWorkerFactory;
 import androidx.work.ListenableWorker;
 import androidx.work.testing.TestListenableWorkerBuilder;
 
-
-import com.github.shwuup.app.token.TokenApiSyncWorker;
+import com.github.shwuup.app.token.CreateTokenApiWorker;
+import com.github.shwuup.app.token.UpdateTokenApiWorker;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @RunWith(JUnit4.class)
-public class TokenApiSyncWorkerTest {
+public class UpdateApiTokenApiWorker {
     private Context context;
 
 
@@ -30,13 +30,14 @@ public class TokenApiSyncWorkerTest {
     }
 
     @Test
-    public void testSleepWorker_retry() {
+    public void testUpdateApiTokenWorker_retry() {
         DelegatingWorkerFactory myWorkerFactory = MainApplication.createApiSyncWorkerFactory();
         Data inputData = new Data.Builder()
-                .putString("Token", "test_token")
+                .putString("Token", "testNewToken")
+                .putString("Old token", "testOldToken")
                 .build();
 
-        TokenApiSyncWorker worker = TestListenableWorkerBuilder.from(context, TokenApiSyncWorker.class)
+        UpdateTokenApiWorker worker = TestListenableWorkerBuilder.from(context, UpdateTokenApiWorker.class)
                 .setWorkerFactory(myWorkerFactory)
                 .setInputData(inputData)
                 .build();

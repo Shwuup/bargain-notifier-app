@@ -9,7 +9,7 @@ import androidx.work.WorkerParameters;
 import com.github.shwuup.app.models.Token;
 import com.github.shwuup.app.token.TokenApiManager;
 import com.github.shwuup.app.token.TokenApiService;
-import com.github.shwuup.app.token.TokenApiSyncWorker;
+import com.github.shwuup.app.token.CreateTokenApiWorker;
 
 import net.lachlanmckee.timberjunit.TimberTestRule;
 
@@ -32,7 +32,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-public class TokenApiSyncWorkerUnitTest {
+public class CreateTokenApiWorkerUnitTest {
     @Rule
     public TimberTestRule logAllAlwaysRule = TimberTestRule.logAllAlways();
     @Mock
@@ -41,7 +41,7 @@ public class TokenApiSyncWorkerUnitTest {
     WorkerParameters workerParams;
     @Mock
     TokenApiService mockService;
-    TokenApiSyncWorker worker;
+    CreateTokenApiWorker worker;
     TokenApiManager tokenApiManager;
     Retrofit retrofit;
     MockWebServer server;
@@ -72,7 +72,7 @@ public class TokenApiSyncWorkerUnitTest {
                 .build();
 
         when(workerParams.getInputData()).thenReturn(inputData);
-        worker = new TokenApiSyncWorker(context, workerParams, tokenApiManager);
+        worker = new CreateTokenApiWorker(context, workerParams, tokenApiManager);
 
         worker.createWork().subscribe(testObserver);
         testObserver.await();

@@ -19,9 +19,13 @@ public class TokenApiManager {
     }
 
     public Single<Response<ResponseBody>> addToken(String token) {
-        Single<Response<ResponseBody>> response = tokenApiService.addToken(new Token(token));
-        Single<Response<ResponseBody>> t = handleResponseCodes(response);
-        return retryManager.retry(t);
+        Single<Response<ResponseBody>> response = handleResponseCodes(tokenApiService.addToken(new Token(token)));
+        return retryManager.retry(response);
+    }
+
+    public Single<Response<ResponseBody>> updateToken(String oldToken, String newToken) {
+        Single<Response<ResponseBody>> response = handleResponseCodes(tokenApiService.updateToken(new Token(newToken, oldToken)));
+        return retryManager.retry(response);
     }
 
     public Single<Response<ResponseBody>> handleResponseCodes(Single<Response<ResponseBody>> res) {

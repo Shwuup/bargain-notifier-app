@@ -8,9 +8,6 @@ import androidx.work.ListenableWorker;
 import androidx.work.WorkerFactory;
 import androidx.work.WorkerParameters;
 
-import com.github.shwuup.app.token.TokenApiManager;
-import com.github.shwuup.app.token.TokenApiSyncWorker;
-
 import org.jetbrains.annotations.NotNull;
 
 public class TokenWorkerFactory extends WorkerFactory {
@@ -24,9 +21,12 @@ public class TokenWorkerFactory extends WorkerFactory {
     @org.jetbrains.annotations.Nullable
     @Override
     public ListenableWorker createWorker(@NonNull @NotNull Context appContext, @NonNull @NotNull String workerClassName, @NonNull @NotNull WorkerParameters workerParameters) {
-        if (workerClassName.equals(TokenApiSyncWorker.class.getName())) {
-            return new TokenApiSyncWorker(appContext, workerParameters, tokenApiManager);
-        } else {
+        if (workerClassName.equals(CreateTokenApiWorker.class.getName())) {
+            return new CreateTokenApiWorker(appContext, workerParameters, tokenApiManager);
+        } else if (workerClassName.equals(UpdateTokenApiWorker.class.getName())) {
+            return new UpdateTokenApiWorker(appContext, workerParameters, tokenApiManager);
+        }
+        else {
             return null;
         }
     }
