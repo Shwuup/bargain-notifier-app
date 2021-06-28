@@ -1,4 +1,4 @@
-package com.github.shwuup.app;
+package com.github.shwuup.app.util;
 
 import com.github.shwuup.BuildConfig;
 

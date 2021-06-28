@@ -1,6 +1,6 @@
 package com.github.shwuup.app.token;
 
-import com.github.shwuup.app.RetryWithBackoff;
+import com.github.shwuup.app.util.RetryWithBackoff;
 import com.github.shwuup.app.models.Token;
 
 import io.reactivex.rxjava3.core.Single;
@@ -30,7 +30,7 @@ public class TokenApiManager {
 
     public Single<Response<ResponseBody>> handleResponseCodes(Single<Response<ResponseBody>> res) {
         return res.flatMap(response -> {
-            if (response.code() == 500) {
+            if (response.code() == 500 || response.code() == 403) {
                 return Single.error(new HttpException(response));
             } else {
                 return Single.just(response);

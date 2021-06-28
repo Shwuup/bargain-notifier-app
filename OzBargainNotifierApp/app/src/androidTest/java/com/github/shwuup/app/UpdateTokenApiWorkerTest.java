@@ -13,6 +13,7 @@ import com.github.shwuup.app.models.Token;
 import com.github.shwuup.app.token.CreateTokenApiWorker;
 import com.github.shwuup.app.token.TokenApiManager;
 import com.github.shwuup.app.token.TokenApiService;
+import com.github.shwuup.app.token.UpdateTokenApiWorker;
 import com.github.shwuup.app.util.SharedPref;
 
 import net.lachlanmckee.timberjunit.TimberTestRule;
@@ -42,7 +43,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(JUnit4.class)
-public class CreateTokenApiWorkerTest {
+public class UpdateTokenApiWorkerTest {
     @Rule
     public TimberTestRule logAllAlwaysRule = TimberTestRule.logAllAlways();
     @Rule
@@ -68,15 +69,19 @@ public class CreateTokenApiWorkerTest {
 
     @Test
     public void testCreateTokenApiWorker_success() throws InterruptedException {
+        //set up config
+        SharedPref.writeString(context, context.getString(R.string.preference_token_key), "test_old_token");
+
         server.enqueue(new MockResponse().setBody("testBody").setResponseCode(200));
         TokenApiService service = retrofit.create(TokenApiService.class);
-        Single<Response<ResponseBody>> call = service.addToken(new Token("test_token"));
-        when(mockService.addToken(any(Token.class))).thenReturn(call);
+        Single<Response<ResponseBody>> call = service.updateToken(new Token("test_token", "test_old_token"));
+        when(mockService.updateToken(any(Token.class))).thenReturn(call);
         myWorkerFactory = MainApplication.createApiSyncWorkerFactory(mockService);
         Data inputData = new Data.Builder()
                 .putString("Token", "test_token")
+                .putString("Old token", "test_old_token")
                 .build();
-        CreateTokenApiWorker worker = TestListenableWorkerBuilder.from(context, CreateTokenApiWorker.class)
+        UpdateTokenApiWorker worker = TestListenableWorkerBuilder.from(context, UpdateTokenApiWorker.class)
                 .setWorkerFactory(myWorkerFactory)
                 .setInputData(inputData)
                 .build();
@@ -96,8 +101,10 @@ public class CreateTokenApiWorkerTest {
         myWorkerFactory = MainApplication.createApiSyncWorkerFactory(service);
         Data inputData = new Data.Builder()
                 .putString("Token", "test_token")
+                .putString("Old token", "test_old_token")
                 .build();
-        CreateTokenApiWorker worker = TestListenableWorkerBuilder.from(context, CreateTokenApiWorker.class)
+
+        UpdateTokenApiWorker worker = TestListenableWorkerBuilder.from(context, UpdateTokenApiWorker.class)
                 .setWorkerFactory(myWorkerFactory)
                 .setInputData(inputData)
                 .build();

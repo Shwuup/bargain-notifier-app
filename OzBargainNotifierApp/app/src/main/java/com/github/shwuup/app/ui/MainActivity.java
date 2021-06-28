@@ -16,25 +16,33 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.work.BackoffPolicy;
+import androidx.work.Data;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 import com.github.shwuup.BuildConfig;
 import com.github.shwuup.R;
 import com.github.shwuup.app.KeywordManager;
 import com.github.shwuup.app.MyAdapter;
 import com.github.shwuup.app.SeenDealsManager;
-import com.github.shwuup.app.ServiceGenerator;
+import com.github.shwuup.app.util.ServiceGenerator;
+import com.github.shwuup.app.token.CreateTokenApiWorker;
 import com.github.shwuup.app.token.TokenApiService;
+import com.github.shwuup.app.util.SharedPref;
 import com.github.shwuup.databinding.ActivityMainBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import java.util.concurrent.TimeUnit;
 
 import timber.log.Timber;
 
-public class ainActivity extends AppCompatActivity {
+
+public class MainActivity extends AppCompatActivity {
     public static final String EXTRA_MESSAGE = "com.github.shwuup.app.MESSAGE";
-    public static final String BASE_URL = "http://api.myservice.com/";
     private static final String TAG = "MainActivity";
 
 
@@ -46,6 +54,7 @@ public class ainActivity extends AppCompatActivity {
     private LinearLayoutManager layoutManager;
     private EditText editText;
     private Context ctx;
+
 
 //    private void setListeners() {
 //        TextInputLayout textInputLayout = findViewById(R.id.editText);
@@ -74,7 +83,6 @@ public class ainActivity extends AppCompatActivity {
 //        AlertDialog dialog = builder.create();
 //        dialog.show();
 //    }
-
 
 
     @Override
@@ -133,7 +141,6 @@ public class ainActivity extends AppCompatActivity {
                                 }
                                 // Get new FCM registration token
                                 String token = task.getResult();
-                                //send that shit
                                 TokenApiService tokenApiService = ServiceGenerator.createService(TokenApiService.class);
 //                                Call<Token> call = tokenApiService.addToken(new Token(token));
 //                                call.enqueue(new Callback<Token>() {
