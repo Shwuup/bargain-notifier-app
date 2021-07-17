@@ -1,105 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".app.MainActivity">
-
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/colorPrimary"
-        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:titleTextColor="@android:color/white" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/editText"
-        app:layout_constraintEnd_toStartOf="@+id/addButton"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="72dp"
-        app:errorTextAppearance="@style/error_appearance"
-        app:errorEnabled="true"
-        app:layout_constraintTop_toTopOf="@+id/toolbar">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/edit_text"
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/logTokenButton"
+            android:layout_width="@dimen/standard_field_width"
             android:layout_height="wrap_content"
-            android:imeOptions="actionGo"
-            android:inputType="text"
-            android:maxLines="1"
-            android:hint="Enter a keyword" />
+            android:layout_gravity="center_horizontal"
+            android:text="@string/log_token" />
 
-    </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/addButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="25dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginRight="16dp"
-        android:backgroundTint="@color/colorPrimary"
-        android:onClick="onAdd"
-        android:text="@string/button_send"
-        android:textColor="@android:color/white"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/editText"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
-
-    <Button
-        android:id="@+id/deleteAllButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="0dp"
-        android:layout_marginBottom="19dp"
-        android:backgroundTint="#ff4d4d"
-        android:onClick="showConfirmationForDeleteAll"
-        android:text="@string/button_delete_all"
-        android:textColor="@android:color/white"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText"
-        app:layout_constraintVertical_bias="0.0" />
-
-    <TextView
-        android:id="@+id/keywordsTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:text="@string/keywords_title"
-        android:textSize="30sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/deleteAllButton"
-        tools:layout_editor_absoluteY="205dp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/my_recycler_view"
-        android:layout_width="378dp"
-        android:layout_height="331dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="5dp"
-        android:layout_marginEnd="12dp"
-        android:scrollbars="vertical"
-
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.444"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/keywordsTitle" />
-
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </layout>

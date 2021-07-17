@@ -4,13 +4,10 @@
     <string name="button_send">Add</string>
     <string name="button_delete_all">Delete all</string>
     <string name="channel_name">Deals</string>
-    <string name="channel_description">Make sound and pop on screen</string>
-    <string name="channel_id">deal_channel</string>
+    <string name="channel_id">deal_notification_id</string>
     <string name="keywords_title">Current keywords</string>
+    <string name="notification_group_id">com.project.bargainNotifier.DEALS</string>
     <string name="notification_sound">kaching.mp3</string>
-    <string name="add_token">send token</string>
-    <string name="msg_subscribed">Hey you subscribed woo</string>
-    <string name="msg_subscribe_failed">oh no....</string>
     <string name="log_token">LOG IT</string>
     <string name="msg_token_fmt" translatable="false">FCM registration Token: %s</string>
     <string name="preference_file_key">com.project.bargainNotifier</string>

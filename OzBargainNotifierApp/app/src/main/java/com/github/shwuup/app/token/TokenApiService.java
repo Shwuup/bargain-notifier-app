@@ -12,11 +12,11 @@ import retrofit2.http.PUT;
 
 public interface TokenApiService {
     @Headers("Content-Type: application/json; charset=utf8")
-    @POST("add_token")
+    @POST("token")
     Single<Response<ResponseBody>> addToken(@Body Token token);
 
     @Headers("Content-Type: application/json; charset=utf8")
-    @PUT("update_token")
+    @PUT("token")
     Single<Response<ResponseBody>> updateToken(@Body Token token);
 
 }

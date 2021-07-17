@@ -95,71 +95,7 @@ public class MainActivity extends AppCompatActivity {
         ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         ctx = getApplicationContext();
-
-        binding.deleteButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                FirebaseMessaging.getInstance().deleteToken().addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (!task.isSuccessful()) {
-                            Timber.d("Not deleted successfully");
-                        } else {
-                            Timber.d("Token deleted successfully");
-                        }
-                    }
-                });
-            }
-        });
-
-        binding.updateTokenButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                FirebaseMessaging.getInstance().deleteToken().addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (!task.isSuccessful()) {
-                            Timber.d("Not updated successfully");
-                        } else {
-                            Timber.d("Token updated successfully");
-                        }
-                    }
-                });
-            }
-        });
-
-        binding.sendTokenButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Get token
-                // [START log_reg_token]
-                FirebaseMessaging.getInstance().getToken()
-                        .addOnCompleteListener(new OnCompleteListener<String>() {
-                            @Override
-                            public void onComplete(@NonNull Task<String> task) {
-                                if (!task.isSuccessful()) {
-                                    Log.w(TAG, "Fetching FCM registration token failed", task.getException());
-                                    return;
-                                }
-                                // Get new FCM registration token
-                                String token = task.getResult();
-                                TokenApiService tokenApiService = ServiceGenerator.createService(TokenApiService.class);
-//                                Call<Token> call = tokenApiService.addToken(new Token(token));
-//                                call.enqueue(new Callback<Token>() {
-//                                    @Override
-//                                    public void onResponse(Call<Token> call, Response<Token> response) {
-//                                        Timber.d("body: %s", response.body());
-//                                        // The network call was a success and we got a response
-//                                    }
-//                                    @Override
-//                                    public void onFailure(Call<Token> call, Throwable t) {
-//                                        // the network call was a failure
-//                                        Timber.e(t);
-//                                    }
-//                                });
-                            }
-                        });
-            }
-
-        });
+        createNotificationChannel();
 
         binding.logTokenButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -196,31 +132,15 @@ public class MainActivity extends AppCompatActivity {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel notificationChannel = notificationManager.getNotificationChannel(getString(R.string.channel_id));
-            if (notificationChannel != null) {
-                notificationManager.deleteNotificationChannel(getString(R.string.channel_id));
-            }
             CharSequence name = getString(R.string.channel_name);
-            String CHANNEL_ID = getString(R.string.channel_id);
-            String description = getString(R.string.channel_description);
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(getResources().getString(R.string.channel_id), name, importance);
             // Register the channel with the system; you can't change the importance
             // or other notification behaviors after this
-            channel.enableLights(true);
-            channel.enableVibration(true);
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                    .build();
-            channel.setSound(Uri.parse("android.resource://"
-                    + ctx.getPackageName() + "/"
-                    + R.raw.kaching), audioAttributes);
-
             notificationManager.createNotificationChannel(channel);
         }
+
     }
 
 //    public void addKeyword() {

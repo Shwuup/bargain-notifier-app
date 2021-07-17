@@ -1,5 +1,13 @@
 package com.github.shwuup.app;
 
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.SystemClock;
+
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.work.BackoffPolicy;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
@@ -12,12 +20,14 @@ import com.github.shwuup.app.token.CreateTokenApiWorker;
 import com.github.shwuup.app.token.TokenApiManager;
 import com.github.shwuup.app.token.TokenApiService;
 import com.github.shwuup.app.token.UpdateTokenApiWorker;
+import com.github.shwuup.app.util.OfferConverter;
 import com.github.shwuup.app.util.ServiceGenerator;
 import com.github.shwuup.app.util.SharedPref;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import timber.log.Timber;
@@ -34,9 +44,9 @@ public class MessagingService extends FirebaseMessagingService {
     // [START receive_message]
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-
-        Timber.d(remoteMessage.getData().toString());
-        // do notification
+        Timber.d(remoteMessage.getData().get("default"));
+        List<Offer> offers = OfferConverter.deserialize(remoteMessage.getData().get("default"));
+        sendNotification(offers);
     }
     // [START on_new_token]
 
@@ -89,12 +99,47 @@ public class MessagingService extends FirebaseMessagingService {
     }
 
     /**
-     * Create and show a simple notification containing the received FCM message.
+     * Create and show offer notification
      *
-     * @param messageBody FCM message body received.
+     * @param offers List of offers
      */
-    private void sendNotification(String messageBody) {
+    private void sendNotification(List<Offer> offers) {
+        String CHANNEL_ID = getResources().getString(R.string.channel_id);
+        String GROUP_ID = getResources().getString(R.string.notification_group_id);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
 
+        for (Offer offer : offers) {
+            int oneTimeID = (int) SystemClock.uptimeMillis();
+            String title = offer.title;
+            String url = offer.url;
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(url));
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.notification_icon)
+                    .setContentTitle("New Deal")
+                    .setContentText(title)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(title))
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    // Set the intent that will fire when the user taps the notification
+                    .setContentIntent(pendingIntent)
+                    .setGroup(GROUP_ID)
+                    .setAutoCancel(true)
+                    .build();
+            notificationManager.notify(oneTimeID, notification);
+        }
+        Notification summaryNotification =
+                new NotificationCompat.Builder(this, CHANNEL_ID)
+                        //set content text to support devices running API level < 24
+                        .setContentText("You have new deals!")
+                        .setSmallIcon(R.drawable.notification_icon)
+                        //build summary info into InboxStyle template
+                        //specify which group this notification belongs to
+                        .setGroup(getResources().getString(R.string.notification_group_id))
+                        //set this notification as the summary for the group
+                        .setGroupSummary(true)
+                        .build();
+        notificationManager.notify(0, summaryNotification);
     }
 
     private void getToken() {
