@@ -8,10 +8,10 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 public final class OffersConverter {
-    public static List<Offer> deserialize(String json) {
-        Gson gson = new Gson();
-        Type listType = new TypeToken<List<Offer>>(){}.getType();
-        List<Offer> offers = gson.fromJson(json, listType);
-        return offers;
-    }
+  public static List<Offer> deserialize(String json) {
+    Gson gson = new Gson();
+    Type listType = new TypeToken<List<Offer>>() {}.getType();
+    List<Offer> offers = gson.fromJson(json, listType);
+    return offers;
+  }
 }

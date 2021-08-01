@@ -26,37 +26,35 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import static org.mockito.Mockito.when;
 
 public class TokenApiManagerTest {
-    @Rule
-    public TimberTestRule logAllAlwaysRule = TimberTestRule.logAllAlways();
-    MockWebServer server;
-    Retrofit retrofit;
-    TokenApiService service;
-    @Mock
-    TokenApiService mockService;
+  @Rule public TimberTestRule logAllAlwaysRule = TimberTestRule.logAllAlways();
+  MockWebServer server;
+  Retrofit retrofit;
+  TokenApiService service;
+  @Mock TokenApiService mockService;
 
-    @Before
-    public void setUp() {
-        MockitoAnnotations.openMocks(this);
-        server = new MockWebServer();
-        retrofit =
-                new Retrofit.Builder()
-                        .baseUrl(server.url("").toString())
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .addCallAdapterFactory(RxJava3CallAdapterFactory.create()).build();
-    }
+  @Before
+  public void setUp() {
+    MockitoAnnotations.openMocks(this);
+    server = new MockWebServer();
+    retrofit =
+        new Retrofit.Builder()
+            .baseUrl(server.url("").toString())
+            .addConverterFactory(GsonConverterFactory.create())
+            .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
+            .build();
+  }
 
+  @Test
+  public void testHandleResponseCodes_throwsErrorWhenCode500() throws InterruptedException {
+    server.enqueue(new MockResponse().setBody("hey").setResponseCode(500));
+    TokenApiManager tokenManager = new TokenApiManager(mockService);
+    service = retrofit.create(TokenApiService.class);
+    Single<Response<ResponseBody>> call = service.addToken(new Token("test"));
+    when(mockService.addToken(new Token("test"))).thenReturn(call);
+    TestObserver<Object> testObserver = new TestObserver<>();
 
-    @Test
-    public void testHandleResponseCodes_throwsErrorWhenCode500() throws InterruptedException {
-        server.enqueue(new MockResponse().setBody("hey").setResponseCode(500));
-        TokenApiManager tokenManager = new TokenApiManager(mockService);
-        service = retrofit.create(TokenApiService.class);
-        Single<Response<ResponseBody>> call = service.addToken(new Token("test"));
-        when(mockService.addToken(new Token("test"))).thenReturn(call);
-        TestObserver<Object> testObserver = new TestObserver<>();
-
-        tokenManager.handleResponseCodes(call).subscribe(testObserver);
-        testObserver.await();
-        testObserver.assertError(HttpException.class);
-    }
+    tokenManager.handleResponseCodes(call).subscribe(testObserver);
+    testObserver.await();
+    testObserver.assertError(HttpException.class);
+  }
 }

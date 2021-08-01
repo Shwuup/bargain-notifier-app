@@ -10,7 +10,6 @@ import androidx.work.testing.TestListenableWorkerBuilder;
 
 import com.github.shwuup.R;
 import com.github.shwuup.app.models.Token;
-import com.github.shwuup.app.token.CreateTokenApiWorker;
 import com.github.shwuup.app.token.TokenApiManager;
 import com.github.shwuup.app.token.TokenApiService;
 import com.github.shwuup.app.token.UpdateTokenApiWorker;
@@ -44,74 +43,79 @@ import static org.mockito.Mockito.when;
 
 @RunWith(JUnit4.class)
 public class UpdateTokenApiWorkerTest {
-    @Rule
-    public TimberTestRule logAllAlwaysRule = TimberTestRule.logAllAlways();
-    @Rule
-    public MockitoRule rule = MockitoJUnit.rule();
-    DelegatingWorkerFactory myWorkerFactory;
-    @Mock
-    TokenApiService mockService;
-    MockWebServer server;
-    TokenApiManager tokenApiManager;
-    Retrofit retrofit;
-    private Context context;
+  @Rule public TimberTestRule logAllAlwaysRule = TimberTestRule.logAllAlways();
+  @Rule public MockitoRule rule = MockitoJUnit.rule();
+  DelegatingWorkerFactory myWorkerFactory;
+  @Mock TokenApiService mockService;
+  MockWebServer server;
+  TokenApiManager tokenApiManager;
+  Retrofit retrofit;
+  private Context context;
 
-    @Before
-    public void setUp() {
-        context = ApplicationProvider.getApplicationContext();
-        server = new MockWebServer();
-        retrofit =
-                new Retrofit.Builder()
-                        .baseUrl(server.url("").toString())
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .addCallAdapterFactory(RxJava3CallAdapterFactory.create()).build();
-    }
+  @Before
+  public void setUp() {
+    context = ApplicationProvider.getApplicationContext();
+    server = new MockWebServer();
+    retrofit =
+        new Retrofit.Builder()
+            .baseUrl(server.url("").toString())
+            .addConverterFactory(GsonConverterFactory.create())
+            .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
+            .build();
+  }
 
-    @Test
-    public void testCreateTokenApiWorker_success() throws InterruptedException {
-        //set up config
-        SharedPref.writeString(context, context.getString(R.string.preference_token_key), "test_old_token");
+  @Test
+  public void testCreateTokenApiWorker_success() throws InterruptedException {
+    // set up config
+    SharedPref.writeString(
+        context, context.getString(R.string.preference_token_key), "test_old_token");
 
-        server.enqueue(new MockResponse().setBody("testBody").setResponseCode(200));
-        TokenApiService service = retrofit.create(TokenApiService.class);
-        Single<Response<ResponseBody>> call = service.updateToken(new Token("test_token", "test_old_token"));
-        when(mockService.updateToken(any(Token.class))).thenReturn(call);
-        myWorkerFactory = MainApplication.createApiSyncWorkerFactory(mockService);
-        Data inputData = new Data.Builder()
-                .putString("Token", "test_token")
-                .putString("Old token", "test_old_token")
-                .build();
-        UpdateTokenApiWorker worker = TestListenableWorkerBuilder.from(context, UpdateTokenApiWorker.class)
-                .setWorkerFactory(myWorkerFactory)
-                .setInputData(inputData)
-                .build();
-        TestObserver<ListenableWorker.Result> testObserver = new TestObserver<>();
+    server.enqueue(new MockResponse().setBody("testBody").setResponseCode(200));
+    TokenApiService service = retrofit.create(TokenApiService.class);
+    Single<Response<ResponseBody>> call =
+        service.updateToken(new Token("test_token", "test_old_token"));
+    when(mockService.updateToken(any(Token.class))).thenReturn(call);
+    myWorkerFactory = MainApplication.createApiSyncWorkerFactory(mockService);
+    Data inputData =
+        new Data.Builder()
+            .putString("Token", "test_token")
+            .putString("Old token", "test_old_token")
+            .build();
+    UpdateTokenApiWorker worker =
+        TestListenableWorkerBuilder.from(context, UpdateTokenApiWorker.class)
+            .setWorkerFactory(myWorkerFactory)
+            .setInputData(inputData)
+            .build();
+    TestObserver<ListenableWorker.Result> testObserver = new TestObserver<>();
 
-        worker.createWork().subscribe(testObserver);
-        testObserver.await();
-        testObserver.assertValue(ListenableWorker.Result.success());
-        String expectedTokenResult = "test_token";
-        String actualTokenResult = SharedPref.readString(context, context.getString(R.string.preference_token_key));
-        assertThat(actualTokenResult, is(expectedTokenResult));
-    }
+    worker.createWork().subscribe(testObserver);
+    testObserver.await();
+    testObserver.assertValue(ListenableWorker.Result.success());
+    String expectedTokenResult = "test_token";
+    String actualTokenResult =
+        SharedPref.readString(context, context.getString(R.string.preference_token_key));
+    assertThat(actualTokenResult, is(expectedTokenResult));
+  }
 
-    @Test
-    public void testCreateTokenApiWorker_retry() throws InterruptedException {
-        TokenApiService service = retrofit.create(TokenApiService.class);
-        myWorkerFactory = MainApplication.createApiSyncWorkerFactory(service);
-        Data inputData = new Data.Builder()
-                .putString("Token", "test_token")
-                .putString("Old token", "test_old_token")
-                .build();
+  @Test
+  public void testCreateTokenApiWorker_retry() throws InterruptedException {
+    TokenApiService service = retrofit.create(TokenApiService.class);
+    myWorkerFactory = MainApplication.createApiSyncWorkerFactory(service);
+    Data inputData =
+        new Data.Builder()
+            .putString("Token", "test_token")
+            .putString("Old token", "test_old_token")
+            .build();
 
-        UpdateTokenApiWorker worker = TestListenableWorkerBuilder.from(context, UpdateTokenApiWorker.class)
-                .setWorkerFactory(myWorkerFactory)
-                .setInputData(inputData)
-                .build();
-        TestObserver<ListenableWorker.Result> testObserver = new TestObserver<>();
+    UpdateTokenApiWorker worker =
+        TestListenableWorkerBuilder.from(context, UpdateTokenApiWorker.class)
+            .setWorkerFactory(myWorkerFactory)
+            .setInputData(inputData)
+            .build();
+    TestObserver<ListenableWorker.Result> testObserver = new TestObserver<>();
 
-        worker.createWork().subscribe(testObserver);
-        testObserver.await();
-        testObserver.assertValue(ListenableWorker.Result.retry());
-    }
+    worker.createWork().subscribe(testObserver);
+    testObserver.await();
+    testObserver.assertValue(ListenableWorker.Result.retry());
+  }
 }

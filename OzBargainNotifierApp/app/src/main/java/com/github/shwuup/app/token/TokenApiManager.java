@@ -9,18 +9,18 @@ import retrofit2.Response;
 
 public class TokenApiManager extends ApiManager {
 
-    private final TokenApiService tokenApiService;
+  private final TokenApiService tokenApiService;
 
-    public TokenApiManager(TokenApiService service) {
-        super();
-        tokenApiService = service;
-    }
+  public TokenApiManager(TokenApiService service) {
+    super();
+    tokenApiService = service;
+  }
 
-    public Single<Response<ResponseBody>> addToken(String token) {
-        return retryRequest(tokenApiService.addToken(new Token(token)));
-    }
+  public Single<Response<ResponseBody>> addToken(String token) {
+    return retryRequest(tokenApiService.addToken(new Token(token)));
+  }
 
-    public Single<Response<ResponseBody>> updateToken(String oldToken, String newToken) {
-        return retryRequest(tokenApiService.updateToken(new Token(newToken, oldToken)));
-    }
+  public Single<Response<ResponseBody>> updateToken(String oldToken, String newToken) {
+    return retryRequest(tokenApiService.updateToken(new Token(newToken, oldToken)));
+  }
 }

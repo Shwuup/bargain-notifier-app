@@ -43,68 +43,65 @@ import static org.mockito.Mockito.when;
 
 @RunWith(JUnit4.class)
 public class CreateTokenApiWorkerTest {
-    @Rule
-    public TimberTestRule logAllAlwaysRule = TimberTestRule.logAllAlways();
-    @Rule
-    public MockitoRule rule = MockitoJUnit.rule();
-    DelegatingWorkerFactory myWorkerFactory;
-    @Mock
-    TokenApiService mockService;
-    MockWebServer server;
-    TokenApiManager tokenApiManager;
-    Retrofit retrofit;
-    private Context context;
+  @Rule public TimberTestRule logAllAlwaysRule = TimberTestRule.logAllAlways();
+  @Rule public MockitoRule rule = MockitoJUnit.rule();
+  DelegatingWorkerFactory myWorkerFactory;
+  @Mock TokenApiService mockService;
+  MockWebServer server;
+  TokenApiManager tokenApiManager;
+  Retrofit retrofit;
+  private Context context;
 
-    @Before
-    public void setUp() {
-        context = ApplicationProvider.getApplicationContext();
-        server = new MockWebServer();
-        retrofit =
-                new Retrofit.Builder()
-                        .baseUrl(server.url("").toString())
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .addCallAdapterFactory(RxJava3CallAdapterFactory.create()).build();
-    }
+  @Before
+  public void setUp() {
+    context = ApplicationProvider.getApplicationContext();
+    server = new MockWebServer();
+    retrofit =
+        new Retrofit.Builder()
+            .baseUrl(server.url("").toString())
+            .addConverterFactory(GsonConverterFactory.create())
+            .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
+            .build();
+  }
 
-    @Test
-    public void testCreateTokenApiWorker_success() throws InterruptedException {
-        server.enqueue(new MockResponse().setBody("testBody").setResponseCode(200));
-        TokenApiService service = retrofit.create(TokenApiService.class);
-        Single<Response<ResponseBody>> call = service.addToken(new Token("test_token"));
-        when(mockService.addToken(any(Token.class))).thenReturn(call);
-        myWorkerFactory = MainApplication.createApiSyncWorkerFactory(mockService);
-        Data inputData = new Data.Builder()
-                .putString("Token", "test_token")
-                .build();
-        CreateTokenApiWorker worker = TestListenableWorkerBuilder.from(context, CreateTokenApiWorker.class)
-                .setWorkerFactory(myWorkerFactory)
-                .setInputData(inputData)
-                .build();
-        TestObserver<ListenableWorker.Result> testObserver = new TestObserver<>();
+  @Test
+  public void testCreateTokenApiWorker_success() throws InterruptedException {
+    server.enqueue(new MockResponse().setBody("testBody").setResponseCode(200));
+    TokenApiService service = retrofit.create(TokenApiService.class);
+    Single<Response<ResponseBody>> call = service.addToken(new Token("test_token"));
+    when(mockService.addToken(any(Token.class))).thenReturn(call);
+    myWorkerFactory = MainApplication.createApiSyncWorkerFactory(mockService);
+    Data inputData = new Data.Builder().putString("Token", "test_token").build();
+    CreateTokenApiWorker worker =
+        TestListenableWorkerBuilder.from(context, CreateTokenApiWorker.class)
+            .setWorkerFactory(myWorkerFactory)
+            .setInputData(inputData)
+            .build();
+    TestObserver<ListenableWorker.Result> testObserver = new TestObserver<>();
 
-        worker.createWork().subscribe(testObserver);
-        testObserver.await();
-        testObserver.assertValue(ListenableWorker.Result.success());
-        String expectedTokenResult = "test_token";
-        String actualTokenResult = SharedPref.readString(context, context.getString(R.string.preference_token_key));
-        assertThat(actualTokenResult, is(expectedTokenResult));
-    }
+    worker.createWork().subscribe(testObserver);
+    testObserver.await();
+    testObserver.assertValue(ListenableWorker.Result.success());
+    String expectedTokenResult = "test_token";
+    String actualTokenResult =
+        SharedPref.readString(context, context.getString(R.string.preference_token_key));
+    assertThat(actualTokenResult, is(expectedTokenResult));
+  }
 
-    @Test
-    public void testCreateTokenApiWorker_retry() throws InterruptedException {
-        TokenApiService service = retrofit.create(TokenApiService.class);
-        myWorkerFactory = MainApplication.createApiSyncWorkerFactory(service);
-        Data inputData = new Data.Builder()
-                .putString("Token", "test_token")
-                .build();
-        CreateTokenApiWorker worker = TestListenableWorkerBuilder.from(context, CreateTokenApiWorker.class)
-                .setWorkerFactory(myWorkerFactory)
-                .setInputData(inputData)
-                .build();
-        TestObserver<ListenableWorker.Result> testObserver = new TestObserver<>();
+  @Test
+  public void testCreateTokenApiWorker_retry() throws InterruptedException {
+    TokenApiService service = retrofit.create(TokenApiService.class);
+    myWorkerFactory = MainApplication.createApiSyncWorkerFactory(service);
+    Data inputData = new Data.Builder().putString("Token", "test_token").build();
+    CreateTokenApiWorker worker =
+        TestListenableWorkerBuilder.from(context, CreateTokenApiWorker.class)
+            .setWorkerFactory(myWorkerFactory)
+            .setInputData(inputData)
+            .build();
+    TestObserver<ListenableWorker.Result> testObserver = new TestObserver<>();
 
-        worker.createWork().subscribe(testObserver);
-        testObserver.await();
-        testObserver.assertValue(ListenableWorker.Result.retry());
-    }
+    worker.createWork().subscribe(testObserver);
+    testObserver.await();
+    testObserver.assertValue(ListenableWorker.Result.retry());
+  }
 }
