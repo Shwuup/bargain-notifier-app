@@ -1,4 +1,4 @@
-package com.github.shwuup.app;
+package com.github.shwuup.app.util;
 
 import android.content.Context;
 
@@ -12,8 +12,19 @@ public class FileManager {
 
     protected Context context;
 
-    FileManager(Context newContext) {
+    public FileManager(Context newContext) {
         this.context = newContext;
+    }
+
+    protected File getFile(String fileName) {
+        Context context = this.context;
+        File file = new File(context.getFilesDir(), fileName);
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return file;
     }
 
     public String readFile(File file) {

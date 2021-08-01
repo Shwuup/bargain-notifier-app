@@ -19,6 +19,7 @@ public class TokenWorkerFactory extends WorkerFactory {
 
     @Nullable
     @org.jetbrains.annotations.Nullable
+
     @Override
     public ListenableWorker createWorker(@NonNull @NotNull Context appContext, @NonNull @NotNull String workerClassName, @NonNull @NotNull WorkerParameters workerParameters) {
         if (workerClassName.equals(CreateTokenApiWorker.class.getName())) {

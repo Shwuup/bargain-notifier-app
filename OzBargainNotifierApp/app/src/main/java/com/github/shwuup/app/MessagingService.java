@@ -8,27 +8,24 @@ import android.os.SystemClock;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
-import androidx.work.BackoffPolicy;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
-import androidx.work.ListenableWorker;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
 
 import com.github.shwuup.R;
+import com.github.shwuup.app.models.Offer;
 import com.github.shwuup.app.token.CreateTokenApiWorker;
 import com.github.shwuup.app.token.TokenApiManager;
 import com.github.shwuup.app.token.TokenApiService;
 import com.github.shwuup.app.token.UpdateTokenApiWorker;
-import com.github.shwuup.app.util.OfferConverter;
+import com.github.shwuup.app.util.OffersConverter;
 import com.github.shwuup.app.util.ServiceGenerator;
 import com.github.shwuup.app.util.SharedPref;
+import com.github.shwuup.app.util.WorkerUtil;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import timber.log.Timber;
 
@@ -45,7 +42,7 @@ public class MessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         Timber.d(remoteMessage.getData().get("default"));
-        List<Offer> offers = OfferConverter.deserialize(remoteMessage.getData().get("default"));
+        List<Offer> offers = OffersConverter.deserialize(remoteMessage.getData().get("default"));
         sendNotification(offers);
     }
     // [START on_new_token]
@@ -70,7 +67,7 @@ public class MessagingService extends FirebaseMessagingService {
                         SharedPref.writeString(this, this.getString(R.string.preference_token_key), newToken);
                         Timber.d("Successfully created token!");
                     },
-                    error -> createRecurringRequest(tokenData, CreateTokenApiWorker.class));
+                    error -> WorkerUtil.createRecurringWorkRequest(tokenData, CreateTokenApiWorker.class, ExistingWorkPolicy.REPLACE, this, "syncApi"));
         } else {
             Timber.d("Updating token...");
             String oldToken = SharedPref.readString(this, this.getString(R.string.preference_token_key));
@@ -79,24 +76,10 @@ public class MessagingService extends FirebaseMessagingService {
                         SharedPref.writeString(this, this.getString(R.string.preference_token_key), newToken);
                         Timber.d("Successfully updated token!");
                     },
-                    error -> {
-                        createRecurringRequest(tokenData, UpdateTokenApiWorker.class);
-                    });
+                    error -> WorkerUtil.createRecurringWorkRequest(tokenData, UpdateTokenApiWorker.class, ExistingWorkPolicy.REPLACE, this, "syncApi"));
         }
     }
 
-    private void createRecurringRequest(Data tokenData, Class<? extends ListenableWorker> tokenClass) {
-        OneTimeWorkRequest myWorkRequest =
-                new OneTimeWorkRequest.Builder(tokenClass)
-                        .setInputData(tokenData)
-                        .setBackoffCriteria(
-                                BackoffPolicy.LINEAR,
-                                3,
-                                TimeUnit.MINUTES)
-                        .build();
-        WorkManager.getInstance(this).enqueueUniqueWork("syncApi", ExistingWorkPolicy.REPLACE, myWorkRequest);
-
-    }
 
     /**
      * Create and show offer notification

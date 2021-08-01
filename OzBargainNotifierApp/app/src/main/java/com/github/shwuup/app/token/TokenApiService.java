@@ -18,5 +18,4 @@ public interface TokenApiService {
     @Headers("Content-Type: application/json; charset=utf8")
     @PUT("token")
     Single<Response<ResponseBody>> updateToken(@Body Token token);
-
 }

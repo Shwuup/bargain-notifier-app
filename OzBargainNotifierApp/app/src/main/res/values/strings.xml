@@ -13,4 +13,7 @@
     <string name="preference_file_key">com.project.bargainNotifier</string>
     <string name="preference_token_key">currentToken</string>
 
+    <string name="element_text">Element</string>
+
+
 </resources>

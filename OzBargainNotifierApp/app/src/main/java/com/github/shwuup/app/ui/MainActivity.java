@@ -1,187 +1,170 @@
 package com.github.shwuup.app.ui;
 
+import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.media.AudioAttributes;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.EditText;
-import android.widget.Toast;
+import android.view.inputmethod.EditorInfo;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.work.BackoffPolicy;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
 
 import com.github.shwuup.BuildConfig;
 import com.github.shwuup.R;
-import com.github.shwuup.app.KeywordManager;
-import com.github.shwuup.app.MyAdapter;
-import com.github.shwuup.app.SeenDealsManager;
+import com.github.shwuup.app.keyword.KeywordApiManager;
+import com.github.shwuup.app.keyword.KeywordFileManager;
+import com.github.shwuup.app.keyword.KeywordService;
+import com.github.shwuup.app.keyword.KeywordWorker;
+import com.github.shwuup.app.models.Event;
 import com.github.shwuup.app.util.ServiceGenerator;
-import com.github.shwuup.app.token.CreateTokenApiWorker;
-import com.github.shwuup.app.token.TokenApiService;
 import com.github.shwuup.app.util.SharedPref;
-import com.github.shwuup.databinding.ActivityMainBinding;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.messaging.FirebaseMessaging;
+import com.github.shwuup.app.util.WorkerUtil;
+import com.google.android.material.textfield.TextInputEditText;
+import com.jakewharton.rxbinding4.view.RxView;
 
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.rxjava3.core.Observable;
+import kotlin.Unit;
 import timber.log.Timber;
 
-
 public class MainActivity extends AppCompatActivity {
-    public static final String EXTRA_MESSAGE = "com.github.shwuup.app.MESSAGE";
-    private static final String TAG = "MainActivity";
+  private TextInputEditText editText;
+  private KeywordFileManager keywordFileManager;
+  private CustomAdapter adapter;
+  private Context context;
+  private KeywordApiManager keywordApiManager;
 
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    if (BuildConfig.DEBUG) {
+      Timber.plant(new Timber.DebugTree());
+    }
+    context = getApplicationContext();
+    keywordFileManager = new KeywordFileManager(context);
+    setContentView(R.layout.activity_main);
+    editText = findViewById(R.id.editText);
+    setupRecyclerView();
+    createNotificationChannel();
+    keywordApiManager =
+        new KeywordApiManager(
+            ServiceGenerator.createService(KeywordService.class), keywordFileManager);
+    String token = getToken();
 
-    private KeywordManager keywordManager;
-    private SeenDealsManager seenDealsManager;
-    private NotificationManager notificationManager;
-    private RecyclerView recyclerView;
-    private MyAdapter mAdapter;
-    private LinearLayoutManager layoutManager;
-    private EditText editText;
-    private Context ctx;
+    Observable<Unit> deleteAllButtonObservable = RxView.clicks(findViewById(R.id.deleteAllButton));
+    deleteAllButtonObservable.subscribe(__ -> showConfirmationForDeleteAll());
+    Observable<Event> addButtonObservable = getDoneClicksObservable();
+    Observable<Event> deleteButtonObservable = adapter.getSubject();
 
+    Observable.merge(addButtonObservable, deleteButtonObservable)
+        .flatMap(
+            event -> {
+              if (event.name.equals("add")) {
+                doOnAdd();
+              } else if (event.name.equals("delete")) {
+                doOnDelete(event.metadata);
+              }
+              return Observable.just(event);
+            })
+        .debounce(10, TimeUnit.SECONDS)
+        .flatMap(x -> keywordApiManager.updateKeywords(token).toObservable())
+        .subscribe(
+            __ -> {
+              Timber.d("Successfully made the api call!");
+            },
+            error -> {
+              Timber.e(error);
+              Data tokenData = new Data.Builder().putString("Token", token).build();
+              WorkerUtil.createRecurringWorkRequest(
+                  tokenData,
+                  KeywordWorker.class,
+                  ExistingWorkPolicy.REPLACE,
+                  context,
+                  "keywordRequest");
+            });
+  }
 
-//    private void setListeners() {
-//        TextInputLayout textInputLayout = findViewById(R.id.editText);
-//        EditText editText = textInputLayout.getEditText();
-//
-//        editText.setOnEditorActionListener((view, actionId, event) -> {
-//            if (actionId == EditorInfo.IME_ACTION_GO) {
-//                onAdd();
-//                return true;
-//            } else {
-//                return false;
-//            }
-//        });
-//    }
+  private void createNotificationChannel() {
+    // Create the NotificationChannel, but only on API 26+ because
+    // the NotificationChannel class is new and not in the support library
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      CharSequence name = getString(R.string.channel_name);
+      int importance = NotificationManager.IMPORTANCE_HIGH;
+      NotificationChannel channel =
+          new NotificationChannel(getResources().getString(R.string.channel_id), name, importance);
+      // Register the channel with the system; you can't change the importance
+      // or other notification behaviors after this
+      NotificationManager notificationManager = getSystemService(NotificationManager.class);
+      notificationManager.createNotificationChannel(channel);
+    }
+  }
 
-//    public void showConfirmationForDeleteAll(View view) {
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        builder.setTitle("Confirmation");
-//        builder.setMessage("Are you sure you want to delete all keywords?");
-//
-//        builder.setPositiveButton("Delete", (dialog, id) -> onDeleteAll());
-//        builder.setNegativeButton("Cancel", (dialog, id) -> {
-//            dialog.cancel();
-//        });
-//
-//        AlertDialog dialog = builder.create();
-//        dialog.show();
-//    }
+  private String getToken() {
+    return SharedPref.readString(context, this.getString(R.string.preference_token_key));
+  }
 
+  private void doOnAdd() {
+    String newKeyword = editText.getText().toString();
+    editText.setText("");
+    addKeyword(newKeyword);
+  }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (BuildConfig.DEBUG) {
-            Timber.plant(new Timber.DebugTree());
-        }
+  private void doOnDelete(String keyword) {
+    keywordFileManager.deleteKeyword(keyword);
+    adapter.getKeywords().remove(keyword);
+  }
 
-        ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-        ctx = getApplicationContext();
-        createNotificationChannel();
+  private void setupRecyclerView() {
+    RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+    LinearLayoutManager layoutManager = new LinearLayoutManager(context);
+    recyclerView.setLayoutManager(layoutManager);
+    adapter = new CustomAdapter(keywordFileManager.readKeywords());
+    recyclerView.setAdapter(adapter);
+  }
 
-        binding.logTokenButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Get token
-                // [START log_reg_token]
-                FirebaseMessaging.getInstance().getToken()
-                        .addOnCompleteListener(new OnCompleteListener<String>() {
-                            @Override
-                            public void onComplete(@NonNull Task<String> task) {
-                                if (!task.isSuccessful()) {
-                                    Log.w(TAG, "Fetching FCM registration token failed", task.getException());
-                                    return;
-                                }
+  private void addKeyword(String keyword) {
+    keywordFileManager.addKeyword(keyword);
+    this.adapter.add(keyword);
+    Timber.d("added keyword");
+  }
 
-                                // Get new FCM registration token
-                                String token = task.getResult();
+  public void deleteAllKeywords() {
+    keywordFileManager.deleteAll();
+    this.adapter.getKeywords().clear();
+  }
 
-                                // Log and toast
-                                String msg = getString(R.string.msg_token_fmt, token);
-                                Log.d(TAG, msg);
-                                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                // [END log_reg_token]
-            }
+  public Observable<Event> getDoneClicksObservable() {
+    return Observable.create(
+        emitter ->
+            editText.setOnEditorActionListener(
+                (textView, actionId, keyEvent) -> {
+                  if (actionId == EditorInfo.IME_ACTION_GO) {
+                    emitter.onNext(new Event("add"));
+                    return true;
+                  }
+                  return false;
+                }));
+  }
+
+  public void showConfirmationForDeleteAll() {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setTitle("Confirmation");
+    builder.setMessage("Are you sure you want to delete all keywords?");
+
+    builder.setPositiveButton("Delete", (dialog, id) -> deleteAllKeywords());
+    builder.setNegativeButton(
+        "Cancel",
+        (dialog, id) -> {
+          dialog.cancel();
         });
 
-
-    }
-
-
-    private void createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(R.string.channel_name);
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel channel = new NotificationChannel(getResources().getString(R.string.channel_id), name, importance);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-
-    }
-
-//    public void addKeyword() {
-//        TextInputLayout textInputLayout = findViewById(R.id.editText);
-//        EditText editText = textInputLayout.getEditText();
-//
-//        String keyword = editText.getText().toString().toLowerCase();
-//        if (keyword.equals("")) {
-//            textInputLayout.setError("You need to enter a keyword");
-//        } else {
-//            keywordManager.addKeyword(keyword);
-//            this.mAdapter.add(new Keyword(keyword));
-//            editText.getText().clear();
-//        }
-//    }
-
-//    public void onAdd(View view) {
-//        addKeyword();
-//    }
-//
-//    public void onAdd() {
-//        addKeyword();
-//    }
-//
-//    public void onDelete(View view) {
-//        ViewParent parent = view.getParent();
-//        ViewGroup parentView = (ViewGroup) parent;
-//        TextView text = null;
-//        for (int i = 0; i < parentView.getChildCount(); i++) {
-//            View child = parentView.getChildAt(i);
-//            if (!(child instanceof Button)) {
-//                text = (TextView) child;
-//            }
-//        }
-//        String keyword = text.getText().toString();
-//        this.keywordManager.deleteKeyword(keyword);
-//        this.mAdapter.delete(keyword);
-//    }
-//
-//    public void onDeleteAll() {
-//        keywordManager.deleteAll();
-//        this.mAdapter.clear();
-//    }
+    AlertDialog dialog = builder.create();
+    dialog.show();
+  }
 }
