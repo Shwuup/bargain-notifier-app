@@ -9,10 +9,12 @@ import android.os.Bundle;
 import android.view.inputmethod.EditorInfo;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
+import androidx.work.WorkManager;
 
 import com.github.shwuup.BuildConfig;
 import com.github.shwuup.R;
@@ -39,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
   private CustomAdapter adapter;
   private Context context;
   private KeywordApiManager keywordApiManager;
+  private Observable<Event> enterKeyEvents;
+  private Observable<Event> deleteEvents;
+  private String token;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -49,33 +54,24 @@ public class MainActivity extends AppCompatActivity {
     context = getApplicationContext();
     keywordFileManager = new KeywordFileManager(context);
     setContentView(R.layout.activity_main);
+    Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+    setSupportActionBar(toolbar);
     editText = findViewById(R.id.editText);
     setupRecyclerView();
     createNotificationChannel();
     keywordApiManager =
         new KeywordApiManager(
             ServiceGenerator.createService(KeywordService.class), keywordFileManager);
-    String token = getToken();
+    token = getToken();
 
     Observable<Unit> deleteAllButtonObservable = RxView.clicks(findViewById(R.id.deleteAllButton));
     deleteAllButtonObservable.subscribe(__ -> showConfirmationForDeleteAll());
-    Observable<Event> addButtonObservable = getDoneClicksObservable();
-    Observable<Event> deleteButtonObservable = adapter.getSubject();
-
-    Observable.merge(addButtonObservable, deleteButtonObservable)
-        .flatMap(
-            event -> {
-              if (event.name.equals("add")) {
-                doOnAdd();
-              } else if (event.name.equals("delete")) {
-                doOnDelete(event.metadata);
-              }
-              return Observable.just(event);
-            })
-        .debounce(10, TimeUnit.SECONDS)
-        .flatMap(x -> keywordApiManager.updateKeywords(token).toObservable())
+    enterKeyEvents = getEnterKeyEvents();
+    deleteEvents = adapter.getSubject();
+    updateKeywordsApiRequest()
         .subscribe(
             __ -> {
+              WorkManager.getInstance(context).cancelUniqueWork("keywordRequest");
               Timber.d("Successfully made the api call!");
             },
             error -> {
@@ -88,6 +84,21 @@ public class MainActivity extends AppCompatActivity {
                   context,
                   "keywordRequest");
             });
+  }
+
+  private Observable<Object> updateKeywordsApiRequest() {
+    return Observable.merge(enterKeyEvents, deleteEvents)
+        .flatMap(
+            event -> {
+              if (event.name.equals("add")) {
+                doOnAdd();
+              } else if (event.name.equals("delete")) {
+                doOnDelete(event.metadata);
+              }
+              return Observable.just(event);
+            })
+        .debounce(15, TimeUnit.SECONDS)
+        .switchMap(x -> keywordApiManager.updateKeywords(token).toObservable());
   }
 
   private void createNotificationChannel() {
@@ -139,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
     this.adapter.getKeywords().clear();
   }
 
-  public Observable<Event> getDoneClicksObservable() {
+  public Observable<Event> getEnterKeyEvents() {
     return Observable.create(
         emitter ->
             editText.setOnEditorActionListener(

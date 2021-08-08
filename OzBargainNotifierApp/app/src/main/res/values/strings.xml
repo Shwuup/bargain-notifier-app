@@ -5,7 +5,7 @@
     <string name="button_delete_all">Delete all</string>
     <string name="channel_name">Deals</string>
     <string name="channel_id">deal_notification_id</string>
-    <string name="keywords_title">Current keywords</string>
+    <string name="keywords_title">Keywords</string>
     <string name="notification_group_id">com.project.bargainNotifier.DEALS</string>
     <string name="notification_sound">kaching.mp3</string>
     <string name="log_token">LOG IT</string>

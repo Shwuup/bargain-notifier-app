@@ -20,8 +20,8 @@ import java.util.List;
 import io.reactivex.rxjava3.subjects.PublishSubject;
 
 public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder> {
-  private SortedList<String> keywords;
-  private PublishSubject<Event> deleteClickSubject = PublishSubject.create();
+  private final SortedList<String> keywords;
+  private final PublishSubject<Event> deleteClickSubject = PublishSubject.create();
 
   public static class ViewHolder extends RecyclerView.ViewHolder {
     private final TextView textView;

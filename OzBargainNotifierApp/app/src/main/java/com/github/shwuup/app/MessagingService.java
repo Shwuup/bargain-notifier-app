@@ -12,7 +12,9 @@ import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
 
 import com.github.shwuup.R;
+import com.github.shwuup.app.keyword.KeywordFileManager;
 import com.github.shwuup.app.models.Offer;
+import com.github.shwuup.app.models.OfferResponse;
 import com.github.shwuup.app.token.CreateTokenApiWorker;
 import com.github.shwuup.app.token.TokenApiManager;
 import com.github.shwuup.app.token.TokenApiService;
@@ -42,8 +44,23 @@ public class MessagingService extends FirebaseMessagingService {
   @Override
   public void onMessageReceived(RemoteMessage remoteMessage) {
     Timber.d(remoteMessage.getData().get("default"));
-    List<Offer> offers = OffersConverter.deserialize(remoteMessage.getData().get("default"));
-    sendNotification(offers);
+    OfferResponse offerResponse =
+        OffersConverter.deserialize(remoteMessage.getData().get("default"));
+    List<String> keywords = offerResponse.keywords;
+    if (isKeywordsSynced(keywords)) {
+      List<Offer> offers = offerResponse.deals;
+      sendNotification(offers);
+    }
+  }
+
+  public boolean isKeywordsSynced(List<String> apiKeywords) {
+    KeywordFileManager keywordFileManager = new KeywordFileManager(this);
+    List<String> internalKeywords = keywordFileManager.readKeywords();
+    if (internalKeywords.size() != apiKeywords.size()) {
+      return false;
+    } else {
+      return internalKeywords.containsAll(apiKeywords);
+    }
   }
   // [START on_new_token]
 
@@ -145,6 +162,7 @@ public class MessagingService extends FirebaseMessagingService {
             .setGroupSummary(true)
             .build();
     notificationManager.notify(0, summaryNotification);
+    Timber.d("Successfully notified");
   }
 
   private void getToken() {

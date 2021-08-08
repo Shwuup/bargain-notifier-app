@@ -75,7 +75,7 @@ public class UpdateTokenApiWorkerTest {
     Single<Response<ResponseBody>> call =
         service.updateToken(new Token("test_token", "test_old_token"));
     when(mockService.updateToken(any(Token.class))).thenReturn(call);
-    myWorkerFactory = MainApplication.createApiSyncWorkerFactory(mockService);
+    myWorkerFactory = MainApplication.addApiSyncFactory(new DelegatingWorkerFactory(), mockService);
     Data inputData =
         new Data.Builder()
             .putString("Token", "test_token")
@@ -100,7 +100,7 @@ public class UpdateTokenApiWorkerTest {
   @Test
   public void testCreateTokenApiWorker_retry() throws InterruptedException {
     TokenApiService service = retrofit.create(TokenApiService.class);
-    myWorkerFactory = MainApplication.createApiSyncWorkerFactory(service);
+    myWorkerFactory = MainApplication.addApiSyncFactory(new DelegatingWorkerFactory(), service);
     Data inputData =
         new Data.Builder()
             .putString("Token", "test_token")

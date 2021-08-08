@@ -11,6 +11,11 @@ import androidx.work.WorkManager;
 
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.rxjava3.core.Single;
+import okhttp3.ResponseBody;
+import retrofit2.Response;
+import timber.log.Timber;
+
 public final class WorkerUtil {
   public static void createRecurringWorkRequest(
       Data data,
@@ -24,5 +29,12 @@ public final class WorkerUtil {
             .setBackoffCriteria(BackoffPolicy.LINEAR, 3, TimeUnit.MINUTES)
             .build();
     WorkManager.getInstance(context).enqueueUniqueWork(uniqueWorkName, policy, myWorkRequest);
+  }
+
+  public static Single<ListenableWorker.Result> retryWork(Single<Response<ResponseBody>> response) {
+    return response
+        .flatMap(result -> Single.just(ListenableWorker.Result.success()))
+        .doOnError(Timber::e)
+        .onErrorReturnItem(ListenableWorker.Result.retry());
   }
 }
