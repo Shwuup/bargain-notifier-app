@@ -4,8 +4,12 @@ import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.inputmethod.EditorInfo;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,6 +22,9 @@ import androidx.work.WorkManager;
 
 import com.github.shwuup.BuildConfig;
 import com.github.shwuup.R;
+import com.github.shwuup.app.AddEvent;
+import com.github.shwuup.app.DeleteEvent;
+import com.github.shwuup.app.MergedObservable;
 import com.github.shwuup.app.keyword.KeywordApiManager;
 import com.github.shwuup.app.keyword.KeywordFileManager;
 import com.github.shwuup.app.keyword.KeywordService;
@@ -28,8 +35,6 @@ import com.github.shwuup.app.util.SharedPref;
 import com.github.shwuup.app.util.WorkerUtil;
 import com.google.android.material.textfield.TextInputEditText;
 import com.jakewharton.rxbinding4.view.RxView;
-
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.core.Observable;
 import kotlin.Unit;
@@ -55,22 +60,27 @@ public class MainActivity extends AppCompatActivity {
     keywordFileManager = new KeywordFileManager(context);
     setContentView(R.layout.activity_main);
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+    toolbar.getOverflowIcon().setColorFilter(Color.WHITE , PorterDuff.Mode.SRC_ATOP);
     setSupportActionBar(toolbar);
     editText = findViewById(R.id.editText);
     setupRecyclerView();
     createNotificationChannel();
+    token = getToken();
     keywordApiManager =
         new KeywordApiManager(
-            ServiceGenerator.createService(KeywordService.class), keywordFileManager);
-    token = getToken();
+            ServiceGenerator.createService(KeywordService.class), keywordFileManager, token);
 
     Observable<Unit> deleteAllButtonObservable = RxView.clicks(findViewById(R.id.deleteAllButton));
     deleteAllButtonObservable.subscribe(__ -> showConfirmationForDeleteAll());
     enterKeyEvents = getEnterKeyEvents();
     deleteEvents = adapter.getSubject();
-    updateKeywordsApiRequest()
+
+    AddEvent addEvent = new AddEvent(enterKeyEvents, this::doOnAdd);
+    DeleteEvent deleteEvent = new DeleteEvent(deleteEvents, this::doOnDelete);
+
+    MergedObservable.updateKeywordsApiRequest(addEvent, deleteEvent, keywordApiManager)
         .subscribe(
-            __ -> {
+            l -> {
               WorkManager.getInstance(context).cancelUniqueWork("keywordRequest");
               Timber.d("Successfully made the api call!");
             },
@@ -86,19 +96,11 @@ public class MainActivity extends AppCompatActivity {
             });
   }
 
-  private Observable<Object> updateKeywordsApiRequest() {
-    return Observable.merge(enterKeyEvents, deleteEvents)
-        .flatMap(
-            event -> {
-              if (event.name.equals("add")) {
-                doOnAdd();
-              } else if (event.name.equals("delete")) {
-                doOnDelete(event.metadata);
-              }
-              return Observable.just(event);
-            })
-        .debounce(15, TimeUnit.SECONDS)
-        .switchMap(x -> keywordApiManager.updateKeywords(token).toObservable());
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    MenuInflater inflater=getMenuInflater();
+    inflater.inflate(R.menu.main_menu, menu);
+    return true;
   }
 
   private void createNotificationChannel() {

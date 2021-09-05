@@ -10,14 +10,16 @@ import retrofit2.Response;
 public class KeywordApiManager extends ApiManager {
   private final KeywordService keywordService;
   private final KeywordFileManager keywordFileManager;
+  private final String token;
 
-  public KeywordApiManager(KeywordService service, KeywordFileManager newKeywordFileManager) {
+  public KeywordApiManager(KeywordService service, KeywordFileManager newKeywordFileManager, String token) {
     super();
     keywordService = service;
     keywordFileManager = newKeywordFileManager;
+    this.token = token;
   }
 
-  public Single<Response<ResponseBody>> updateKeywords(String token) {
+  public Single<Response<ResponseBody>> updateKeywords() {
     return retryRequest(
         handleResponseCodes(
             keywordService.updateKeywords(

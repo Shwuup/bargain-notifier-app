@@ -47,6 +47,7 @@ public class KeywordFileManager extends FileManager {
     List<String> keywords = readKeywords();
     keywords.removeIf(k -> k.equals(keywordToDelete));
     writeKeywords(keywords);
+    Timber.d(this.readKeywords().toString());
   }
 
   public void writeKeywords(List<String> keywords) {
@@ -71,7 +72,7 @@ public class KeywordFileManager extends FileManager {
       keywords.add(newKeyword);
       writeKeywords(keywords);
     }
-    Timber.v(this.readKeywords().toString());
+    Timber.d(this.readKeywords().toString());
   }
 
   public void deleteAll() {

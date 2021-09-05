@@ -16,8 +16,6 @@ import okhttp3.ResponseBody;
 import retrofit2.Response;
 
 public class KeywordWorker extends RxWorker {
-  private static final String TOKEN = "Token";
-
   private final KeywordApiManager keywordApiManager;
 
   public KeywordWorker(
@@ -32,8 +30,7 @@ public class KeywordWorker extends RxWorker {
   @NotNull
   @Override
   public Single<ListenableWorker.Result> createWork() {
-    String token = getInputData().getString(TOKEN);
-    Single<Response<ResponseBody>> response = keywordApiManager.updateKeywords(token);
+    Single<Response<ResponseBody>> response = keywordApiManager.updateKeywords();
     return WorkerUtil.retryWork(response);
   }
 }
